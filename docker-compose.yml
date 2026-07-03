@@ -2,7 +2,7 @@ services:
 
   auth-db:
     image: postgres:17
-    container_name: ${DOCKER_POSTGRES_AUTH_CONTAINER_NAME}
+    container_name: ${DOCKER_POSTGRES_AUTH_DB_CONTAINER_NAME}
     restart: unless-stopped
 
     environment:
@@ -24,7 +24,7 @@ services:
 
   user-db:
     image: postgres:17
-    container_name: ${DOCKER_POSTGRES_USER_CONTAINER_NAME}
+    container_name: ${DOCKER_POSTGRES_USER_DB_CONTAINER_NAME}
     restart: unless-stopped
 
     environment:
@@ -48,17 +48,15 @@ services:
     build:
       context: ./user-service
       dockerfile: Dockerfile
-    container_name: user-service
+    container_name: ${DOCKER_USER_SERVICE_CONTAINER_NAME}
     restart: on-failure:1  
 
     depends_on:
       user-db:
         condition: service_healthy
 
-    ports:
-      - "8081:8080"
-
     environment:
+      USER_SERVICE_PORT: ${DOCKER_USER_SERVICE_PORT}
       USER_DB_URL: ${DOCKER_POSTGRES_USER_DB_URL}
       USER_DB_USERNAME: ${DOCKER_POSTGRES_USER}
       USER_DB_PASSWORD: ${DOCKER_POSTGRES_PASSWORD}
@@ -70,22 +68,39 @@ services:
     build:
       context: ./auth-service
       dockerfile: Dockerfile
-    container_name: auth-service
-    restart: on-failure:1  
+    container_name: ${DOCKER_AUTH_SERVICE_CONTAINER_NAME}
+    restart: on-failure:1
 
     depends_on:
       auth-db:
         condition: service_healthy
 
-    ports:
-      - "8082:8080"
-
     environment:
+      AUTH_SERVICE_PORT: ${DOCKER_AUTH_SERVICE_PORT}
       USER_DB_URL: ${DOCKER_POSTGRES_AUTH_DB_URL}
       USER_DB_USERNAME: ${DOCKER_POSTGRES_USER}
       USER_DB_PASSWORD: ${DOCKER_POSTGRES_PASSWORD}
       JWT_SECRET: ${JWT_SECRET}
 
+    networks:
+      - ezhomenet
+
+
+  app:
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+    container_name: api-gateway
+    restart: on-failure:1
+    environment:
+      API_GATEWAY_SERVICE_PORT: ${DOCKER_API_GATEWAY_PORT}
+      API_GATEWAY_AUTH_URL: ${DOCKER_API_GATEWAY_AUTH_URL}
+      AUTH_SERVICE_CONTAINER_NAME: ${DOCKER_AUTH_SERVICE_CONTAINER_NAME}
+      AUTH_SERVICE_PORT: ${DOCKER_AUTH_SERVICE_PORT}
+      USER_SERVICE_CONTAINER_NAME: ${DOCKER_USER_SERVICE_CONTAINER_NAME}
+      USER_SERVICE_PORT: ${DOCKER_USER_SERVICE_PORT}
+    ports:
+      - "4000:4000"
     networks:
       - ezhomenet
 
