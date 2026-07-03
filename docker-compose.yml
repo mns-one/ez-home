@@ -1,5 +1,28 @@
 services:
-  db:
+
+  auth-db:
+    image: postgres:17
+    container_name: ${DOCKER_POSTGRES_AUTH_CONTAINER_NAME}
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_DB: ${DOCKER_POSTGRES_AUTH_DB_NAME}
+      POSTGRES_USER: ${DOCKER_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${DOCKER_POSTGRES_PASSWORD}
+
+    volumes:
+      - auth_data:/var/lib/postgresql/data
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-admin} -d ${POSTGRES_DB:-authdb}"]
+      interval: 10s
+      timeout: 5s
+      retries: 1
+
+    networks:
+      - ezhomenet
+
+  user-db:
     image: postgres:17
     container_name: ${DOCKER_POSTGRES_USER_CONTAINER_NAME}
     restart: unless-stopped
@@ -21,7 +44,7 @@ services:
     networks:
       - ezhomenet
 
-  app:
+  user-app:
     build:
       context: ./user-service
       dockerfile: Dockerfile
@@ -29,7 +52,7 @@ services:
     restart: on-failure:1  
 
     depends_on:
-      db:
+      user-db:
         condition: service_healthy
 
     ports:
@@ -43,8 +66,33 @@ services:
     networks:
       - ezhomenet
 
+  auth-app:
+    build:
+      context: ./auth-service
+      dockerfile: Dockerfile
+    container_name: auth-service
+    restart: on-failure:1  
+
+    depends_on:
+      auth-db:
+        condition: service_healthy
+
+    ports:
+      - "8082:8080"
+
+    environment:
+      USER_DB_URL: ${DOCKER_POSTGRES_AUTH_DB_URL}
+      USER_DB_USERNAME: ${DOCKER_POSTGRES_USER}
+      USER_DB_PASSWORD: ${DOCKER_POSTGRES_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+
+    networks:
+      - ezhomenet
+
 networks:
   ezhomenet:
 
 volumes:
   user_data:
+  auth_data:
+
