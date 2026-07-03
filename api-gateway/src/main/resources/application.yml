@@ -1,0 +1,24 @@
+server:
+  port: ${GATEWAY_SERVICE_PORT}
+
+spring:
+  cloud:
+    gateway:
+      server:
+        webflux:
+          routes:
+             # Route for /auth/** to auth-service
+            - id: auth-service-route
+              uri: http://${AUTH_SERVICE_CONTAINER_NAME}:${AUTH_SERVICE_PORT}
+              predicates:
+                - Path=/auth/**
+
+            # Route for /users/** to user-service
+            - id: user-service-route
+              uri: http://${USER_SERVICE_CONTAINER_NAME}:${USER_SERVICE_PORT}
+              predicates:
+                - Path=/users/**
+              filters:
+                - JwtValidation
+
+
