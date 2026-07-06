@@ -70,16 +70,17 @@ public class UserService {
     }
 
     // delete user account by userId
-    public void deleteUserAccount(long userId) {
+    public void deleteUserAccount(String email) {
 
-        User user = userRepository.findByUserId(userId)
+        User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new CustomException(
-                    "User account not found for given userId"
+                    "User account not found for given email"
                 ));
         userRepository.delete(user);
 
     }
 
+    // map User entity to UserAccountDTO
     private UserAccountDTO mapToUserAccountDTO(User user) {
         return UserAccountDTO.builder()
                 .userId(user.getUserId())
