@@ -2,6 +2,7 @@ package com.ezhome.authservice.service;
 
 import com.ezhome.authservice.dto.LoginRequestDTO;
 import com.ezhome.authservice.exception.CustomException;
+import com.ezhome.authservice.grpc.UserServiceGrpcClient;
 import com.ezhome.authservice.model.Client;
 import com.ezhome.authservice.repository.ClientRepository;
 
@@ -19,10 +20,12 @@ public class ClientService {
 
   private final ClientRepository clientRepository;
   private final PasswordEncoder passwordEncoder;
+  private final UserServiceGrpcClient userServiceGrpcClient;
 
-  public ClientService(ClientRepository clientRepository, PasswordEncoder passwordEncoder) {
+  public ClientService(ClientRepository clientRepository, PasswordEncoder passwordEncoder, UserServiceGrpcClient userServiceGrpcClient) {
     this.clientRepository = clientRepository;
     this.passwordEncoder = passwordEncoder;
+    this.userServiceGrpcClient = userServiceGrpcClient;
   }
 
   // register a new client
@@ -38,9 +41,41 @@ public class ClientService {
     newClient.setPassword(passwordEncoder.encode(loginRequestDTO.getPassword()));
     newClient.setRole("USER"); // Set default role
 
-    clientRepository.save(newClient);
+    try{
+      // poll the User-service before creating a user account
+      userServiceGrpcClient.pollUserService("ping");
+      clientRepository.save(newClient);
+      userServiceGrpcClient.createUserAccount("user", newClient.getEmail());
+    }
+    catch (Exception e) {
+      log.error("Error while registering client: {}", e.getMessage());
+      throw new CustomException("Failed to register client");
+    }
 
   }
+
+  public void deleteClient(LoginRequestDTO loginRequestDTO) {
+
+    Optional<Client> clientOptional = findByEmail(loginRequestDTO.getEmail())
+        .filter(u -> passwordEncoder.matches(loginRequestDTO.getPassword(), u.getPassword()));
+
+    if (!clientOptional.isPresent()) {
+      throw new CustomException("Invalid email or password");
+    }
+
+    try{
+      // poll the User-service before deleting a user account
+      userServiceGrpcClient.pollUserService("ping");
+      clientRepository.delete(clientOptional.get());
+      userServiceGrpcClient.deleteUserAccount(loginRequestDTO.getEmail());
+    }
+    catch (Exception e) {
+      log.error("Error while deleting client: {}", e.getMessage());
+      throw new CustomException("Failed to delete client");
+    }
+
+  }
+
 
   // find client by email
   public Optional<Client> findByEmail(String email) {

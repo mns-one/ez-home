@@ -9,6 +9,7 @@ import com.ezhome.authservice.service.ClientService;
 import java.util.Optional;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -65,6 +66,12 @@ public class AuthController {
 
     return ResponseEntity.ok().build();
 
+  }
+
+  @DeleteMapping("/delete")
+  public ResponseEntity<Void> deleteClient(@Valid @RequestBody LoginRequestDTO loginRequestDTO) {
+    clientService.deleteClient(loginRequestDTO);
+    return ResponseEntity.ok().build();
   }
 
 }
