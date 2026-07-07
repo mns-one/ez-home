@@ -26,11 +26,11 @@ public class JwtUtil {
 
   }
 
-  // generate JWT token with email and role
-  public String generateToken(String email, String role) {
+  // generate JWT token with userId and role
+  public String generateToken(String id, String role) {
 
     return Jwts.builder()
-        .subject(email)
+        .subject(id)
         .claim("role", role)
         .issuedAt(new Date())
         .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 *10)) // 10 hours
