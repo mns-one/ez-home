@@ -1,8 +1,11 @@
 package com.ezhome.userservice.service;
 
+import java.util.UUID;
+
 import org.springframework.stereotype.Service;
 
-import com.ezhome.userservice.dto.CreateUserAccountDTO;
+import com.ezhome.userservice.dto.CreateUserDTO;
+import com.ezhome.userservice.dto.EditUserDTO;
 import com.ezhome.userservice.dto.UserAccountDTO;
 import com.ezhome.userservice.entity.User;
 import com.ezhome.userservice.exception.CustomException;
@@ -10,7 +13,6 @@ import com.ezhome.userservice.repository.UserRepository;
 
 
 @Service
-
 public class UserService {
 
     private final UserRepository userRepository;
@@ -20,48 +22,45 @@ public class UserService {
     }
 
     // create a new user account
-    public UserAccountDTO createUserAccount(CreateUserAccountDTO payload) {
+    public User createUser(CreateUserDTO payload) {
 
-        if(userRepository.existsByEmailAndUserIdNot(payload.getEmail(), null)){
+        if(userRepository.existsByEmailAndIdNot(payload.getEmail(), null)){
             throw new CustomException("Email linked to another user account");
         }
 
         User newUser = User.builder()
-                .username(payload.getUsername())
+                .id((payload.getId()))
+                .username("user")
                 .email(payload.getEmail())
                 .build();
 
-        User savedUser = userRepository.save(newUser);
-
-        return mapToUserAccountDTO(savedUser);
+        User createdUser = userRepository.save(newUser);
+        return createdUser;
 
     }
 
     // find user account by userId
-    public UserAccountDTO getUserAccount(long userId) {
+    public UserAccountDTO getUserAccount(UUID id) {
 
-        User user = userRepository.findByUserId(userId)
+        User user = userRepository.findById(id)
                 .orElseThrow(() -> new CustomException(
-                    "User account not found for given userId"
+                    "User account not found for given email"
                 ));
         return mapToUserAccountDTO(user);
 
     }
 
     // edit user account by userId
-    public UserAccountDTO editUserAccount(long userId, CreateUserAccountDTO payload) {
+    public UserAccountDTO editUser(UUID id, EditUserDTO payload) {
 
-        User user = userRepository.findByUserId(userId)
+        User user = userRepository.findById(id)
                 .orElseThrow(() -> new CustomException(
-                    "User account not found for given userId"
+                    "User account not found for given email"
                 ));
 
-        if(userRepository.existsByEmailAndUserIdNot(payload.getEmail(), userId)){
-            throw new CustomException("Email linked to another user account");
-        }
-
         user.setUsername(payload.getUsername());
-        user.setEmail(payload.getEmail());
+        user.setCity(payload.getCity());
+        user.setPofileImageUrl(payload.getPofileImageUrl());
 
         User updatedUser = userRepository.save(user);
 
@@ -70,9 +69,9 @@ public class UserService {
     }
 
     // delete user account by userId
-    public void deleteUserAccount(String email) {
+    public void deleteUser(UUID id) {
 
-        User user = userRepository.findByEmail(email)
+        User user = userRepository.findById(id)
                 .orElseThrow(() -> new CustomException(
                     "User account not found for given email"
                 ));
@@ -83,9 +82,10 @@ public class UserService {
     // map User entity to UserAccountDTO
     private UserAccountDTO mapToUserAccountDTO(User user) {
         return UserAccountDTO.builder()
-                .userId(user.getUserId())
                 .username(user.getUsername())
                 .email(user.getEmail())
+                .city(user.getCity())
+                .pofileImageUrl(user.getPofileImageUrl())
                 .createdAt(user.getCreatedAt())
                 .build();
     }
