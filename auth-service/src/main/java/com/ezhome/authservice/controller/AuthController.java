@@ -4,7 +4,6 @@ import com.ezhome.authservice.dto.LoginRequestDTO;
 import com.ezhome.authservice.dto.LoginResponseDTO;
 import com.ezhome.authservice.exception.AccessException;
 import com.ezhome.authservice.service.AuthService;
-import com.ezhome.authservice.service.ClientService;
 
 import java.util.Optional;
 import jakarta.validation.Valid;
@@ -23,23 +22,21 @@ import org.springframework.web.bind.annotation.RequestMapping;
 public class AuthController {
 
   private final AuthService authService;
-  private final ClientService clientService;
 
-  public AuthController(AuthService authService, ClientService clientService) {
+  public AuthController(AuthService authService) {
     this.authService = authService;
-    this.clientService = clientService;
   }
 
   @PostMapping("/register")
   public ResponseEntity<Void> register(@Valid @RequestBody LoginRequestDTO loginRequestDTO) {
-    clientService.registerClient(loginRequestDTO);
+    authService.registerUser(loginRequestDTO);
     return ResponseEntity.ok().build();
   }
 
   @PostMapping("/login")
   public ResponseEntity<LoginResponseDTO> login(@Valid @RequestBody LoginRequestDTO loginRequestDTO) {
 
-    Optional<String> tokenOptional = authService.authenticate(loginRequestDTO);
+    Optional<String> tokenOptional = authService.authenticateUser(loginRequestDTO);
 
     if (tokenOptional.isEmpty()) {
       throw new AccessException("Invalid email or password");
@@ -48,6 +45,12 @@ public class AuthController {
     String token = tokenOptional.get();
     return ResponseEntity.ok(new LoginResponseDTO(token));
 
+  }
+
+  @DeleteMapping("/delete")
+  public ResponseEntity<Void> deleteClient(@Valid @RequestBody LoginRequestDTO loginRequestDTO) {
+    authService.deleteUser(loginRequestDTO);
+    return ResponseEntity.ok().build();
   }
 
   @GetMapping("/validate")
@@ -66,12 +69,6 @@ public class AuthController {
 
     return ResponseEntity.ok().build();
 
-  }
-
-  @DeleteMapping("/delete")
-  public ResponseEntity<Void> deleteClient(@Valid @RequestBody LoginRequestDTO loginRequestDTO) {
-    clientService.deleteClient(loginRequestDTO);
-    return ResponseEntity.ok().build();
   }
 
 }

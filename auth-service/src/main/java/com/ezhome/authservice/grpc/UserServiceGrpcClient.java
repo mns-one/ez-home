@@ -9,6 +9,8 @@ import user.pollResponse;
 import user.CreateUserAccountRequest;
 import user.CreateUserAccountResponse;
 import user.DeleteUserAccountRequest;
+import user.DeleteUserAccountResponse;
+
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import lombok.extern.slf4j.Slf4j;
@@ -49,10 +51,10 @@ public class UserServiceGrpcClient {
     }
 
     // Create a new user account in the User-service
-    public CreateUserAccountResponse createUserAccount(String username, String email) {
+    public CreateUserAccountResponse createUserAccount(String userId, String email) {
 
         CreateUserAccountRequest request = CreateUserAccountRequest.newBuilder()
-                .setUsername(username)
+                .setUserId(userId)
                 .setEmail(email)
                 .build();
 
@@ -63,14 +65,15 @@ public class UserServiceGrpcClient {
     }
 
     // Delete a user account in the User-service
-    public void deleteUserAccount(String email) {
+    public DeleteUserAccountResponse deleteUserAccount(String userId) {
         
         DeleteUserAccountRequest request = DeleteUserAccountRequest.newBuilder()
-                .setId(email)
+                .setUserId(userId)
                 .build();
 
-        blockingStub.deleteUserAccount(request);
-        log.info("Sent gRPC DeleteUserAccountRequest for email {}", email);
+        DeleteUserAccountResponse response = blockingStub.deleteUserAccount(request);
+        log.info("Recived gRPC DeleteUserAccountResponse", response);
+        return response;
 
     }
     
