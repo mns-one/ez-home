@@ -17,7 +17,7 @@ spring:
             - id: user-service-route
               uri: http://${USER_SERVICE_CONTAINER_NAME}:${USER_SERVICE_PORT}
               predicates:
-                - Path=/users/**
+                - Path=/user/**
               filters:
                 - JwtValidation
 

@@ -1,41 +1,56 @@
 package com.ezhome.apigateway.filter;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.gateway.filter.GatewayFilter;
 import org.springframework.cloud.gateway.filter.factory.AbstractGatewayFilterFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
-import org.springframework.web.reactive.function.client.WebClient;
+
+import com.ezhome.apigateway.util.JwtUtil;
+
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
 
 @Component
 public class JwtValidationGatewayFilterFactory extends AbstractGatewayFilterFactory<Object> {
 
-  private final WebClient webClient;
+  private final JwtUtil jwtUtil;
 
-  public JwtValidationGatewayFilterFactory(WebClient.Builder webClientBuilder,
-      @Value("${auth.service.url}") String authServiceUrl) {
-    this.webClient = webClientBuilder.baseUrl(authServiceUrl).build();
+  public JwtValidationGatewayFilterFactory(JwtUtil jwtUtil) {
+    this.jwtUtil = jwtUtil;
   }
 
   @Override
   public GatewayFilter apply(Object config) {
 
     return (exchange, chain) -> {
-      String token =
-          exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
 
-      if(token == null || !token.startsWith("Bearer ")) {
+      String authHeader = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
+
+      if(authHeader == null || !authHeader.startsWith("Bearer ")) {
         exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
         return exchange.getResponse().setComplete();
       }
 
-      return webClient.get()
-          .uri("/validate")
-          .header(HttpHeaders.AUTHORIZATION, token)
-          .retrieve()
-          .toBodilessEntity()
-          .then(chain.filter(exchange));
+      String token = authHeader.substring(7);
+
+      try {
+        Claims claims = jwtUtil.extractClaims(token);
+        String id = claims.getSubject();
+        String role = claims.get("role", String.class);
+
+        var mutatedRequest = exchange.getRequest().mutate()
+            .header("X-User-Id", id)
+            .header("X-User-Role", role)
+            .build();
+
+        return chain.filter(exchange.mutate().request(mutatedRequest).build());
+      }
+      catch (JwtException e) {
+        exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
+        return exchange.getResponse().setComplete();
+      }
+
     };
 
   }
