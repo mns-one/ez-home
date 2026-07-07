@@ -1,20 +1,22 @@
 package com.ezhome.userservice.grpc;
 
-import com.ezhome.userservice.dto.CreateUserAccountDTO;
-import com.ezhome.userservice.dto.UserAccountDTO;
+import java.util.UUID;
+
+import com.ezhome.userservice.dto.CreateUserDTO;
+import com.ezhome.userservice.entity.User;
 import com.ezhome.userservice.service.UserService;
 
 import user.UserServiceGrpc.UserServiceImplBase;
-import com.google.protobuf.Empty;
 import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.server.service.GrpcService;
+import io.grpc.stub.StreamObserver;
+
 import user.CreateUserAccountRequest;
 import user.CreateUserAccountResponse;
 import user.DeleteUserAccountRequest;
+import user.DeleteUserAccountResponse;
 import user.pollRequest;
 import user.pollResponse;
-
-import io.grpc.stub.StreamObserver;
 
 
 @GrpcService
@@ -47,18 +49,18 @@ public class UserGrpcService extends UserServiceImplBase {
         // create a new user account in the User-service
         log.info("Recieved gRPC createUserAccountRequest {}", createUserAccountRequest.toString());
 
-        CreateUserAccountDTO payload = CreateUserAccountDTO.builder()
-            .username(createUserAccountRequest.getUsername())
+        CreateUserDTO payload = CreateUserDTO.builder()
+            .id(UUID.fromString(createUserAccountRequest.getUserId()))
             .email(createUserAccountRequest.getEmail())
             .build();
 
-        UserAccountDTO createdUser = userService.createUserAccount(payload);
+        User createdUser = userService.createUser(payload);
 
         CreateUserAccountResponse response = CreateUserAccountResponse.newBuilder()
-                .setId(String.valueOf(createdUser.getUserId()))
+                .setUserId(createdUser.getId().toString())
                 .setUsername(createdUser.getUsername())
                 .setEmail(createdUser.getEmail())
-                .setCreatedAt(String.valueOf(createdUser.getCreatedAt()))
+                .setCreatedAt(createdUser.getCreatedAt().toString())
                 .build();
 
         responseObserver.onNext(response);
@@ -66,16 +68,16 @@ public class UserGrpcService extends UserServiceImplBase {
     }
 
     @Override
-    public void deleteUserAccount(DeleteUserAccountRequest deleteUserAccountRequest, StreamObserver<Empty> responseObserver) {
+    public void deleteUserAccount(DeleteUserAccountRequest deleteUserAccountRequest, StreamObserver<DeleteUserAccountResponse> responseObserver) {
 
         // delete a user account in the User-service
         log.info("Recieved gRPC deleteUserAccountRequest {}", deleteUserAccountRequest.toString());
 
-        userService.deleteUserAccount(deleteUserAccountRequest.getId());
+        userService.deleteUser(UUID.fromString(deleteUserAccountRequest.getUserId()));
 
-        responseObserver.onNext(
-            Empty.newBuilder().build()
-        );
+        DeleteUserAccountResponse response = DeleteUserAccountResponse.newBuilder().setMessage("Account Deleted Sucessfully!").build();
+
+        responseObserver.onNext(response);
         responseObserver.onCompleted();
     }
     

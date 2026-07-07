@@ -10,9 +10,10 @@ import lombok.Data;
 @Builder
 public class UserAccountDTO {
 
-    private long userId;
     private String username;
     private String email;
+    private String city;
+    private String pofileImageUrl;
     private LocalDateTime createdAt;
 
 }
