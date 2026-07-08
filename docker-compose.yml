@@ -44,6 +44,28 @@ services:
     networks:
       - ezhomenet
 
+  device-registry-db:
+    image: postgres:17
+    container_name: ${DOCKER_POSTGRES_DEVICE_REGISTRY_DB_CONTAINER_NAME}
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_DB: ${DOCKER_POSTGRES_DEVICE_REGISTRY_DB_NAME}
+      POSTGRES_USER: ${DOCKER_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${DOCKER_POSTGRES_PASSWORD}
+
+    volumes:
+      - device_registry_data:/var/lib/postgresql/data
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-admin} -d ${POSTGRES_DB:-deviceregistrydb}"]
+      interval: 10s
+      timeout: 5s
+      retries: 1
+
+    networks:
+      - ezhomenet
+
   user-app:
     build:
       context: ./user-service
@@ -89,6 +111,26 @@ services:
     networks:
       - ezhomenet
 
+  device-registry-app:
+    build:
+      context: ./device-registry-service
+      dockerfile: Dockerfile
+    container_name: ${DOCKER_DEVICE_REGISTRY_SERVICE_CONTAINER_NAME}
+    restart: on-failure:1  
+
+    depends_on:
+      device-registry-db:
+        condition: service_healthy
+
+    environment:
+      DEVICE_REGISTRY_SERVICE_PORT: ${DOCKER_DEVICE_REGISTRY_SERVICE_PORT}
+      DEVICE_REGISTRY_GRPC_SERVER_PORT: ${DOCKER_DEVICE_REGISTRY_SERVICE_GRPC_PORT}
+      DEVICE_REGISTRY_DB_URL: ${DOCKER_POSTGRES_DEVICE_REGISTRY_DB_URL}
+      DEVICE_REGISTRY_DB_USERNAME: ${DOCKER_POSTGRES_USER}
+      DEVICE_REGISTRY_DB_PASSWORD: ${DOCKER_POSTGRES_PASSWORD}
+
+    networks:
+      - ezhomenet
 
   app:
     build:
@@ -104,6 +146,8 @@ services:
       AUTH_SERVICE_PORT: ${DOCKER_AUTH_SERVICE_PORT}
       USER_SERVICE_CONTAINER_NAME: ${DOCKER_USER_SERVICE_CONTAINER_NAME}
       USER_SERVICE_PORT: ${DOCKER_USER_SERVICE_PORT}
+      DEVICE_REGISTRY_SERVICE_CONTAINER_NAME: ${DOCKER_DEVICE_REGISTRY_SERVICE_CONTAINER_NAME}
+      DEVICE_REGISTRY_SERVICE_PORT: ${DOCKER_DEVICE_REGISTRY_SERVICE_PORT}
     ports:
       - "4000:4000"
     networks:
@@ -115,4 +159,5 @@ networks:
 volumes:
   user_data:
   auth_data:
+  device_registry_data:
 
