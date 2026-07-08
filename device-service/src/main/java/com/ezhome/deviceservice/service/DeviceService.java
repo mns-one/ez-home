@@ -11,16 +11,22 @@ import com.ezhome.deviceservice.dto.DeviceDTO;
 import com.ezhome.deviceservice.dto.EditDeviceRequestDTO;
 import com.ezhome.deviceservice.entity.Device;
 import com.ezhome.deviceservice.exception.CustomException;
+import com.ezhome.deviceservice.grpc.DeviceRegistryServiceGrpcClient;
 import com.ezhome.deviceservice.repository.DeviceRepository;
+
+import lombok.extern.slf4j.Slf4j;
 
 
 @Service
+@Slf4j
 public class DeviceService {
 
     private final DeviceRepository deviceRepository;
+    private final DeviceRegistryServiceGrpcClient deviceRegistryServiceGrpcClient;
 
-    public DeviceService(DeviceRepository deviceRepository) {
+    public DeviceService(DeviceRepository deviceRepository, DeviceRegistryServiceGrpcClient deviceRegistryServiceGrpcClient) {
         this.deviceRepository = deviceRepository;
+        this.deviceRegistryServiceGrpcClient = deviceRegistryServiceGrpcClient;
     }
 
     public DeviceDTO createUserDevice(UUID userId, CreateDeviceRequestDTO req) {
@@ -36,6 +42,16 @@ public class DeviceService {
                             .modelName(req.getModelName())
                             .build();
         
+        try{
+            if(!deviceRegistryServiceGrpcClient.validateDevice(newDevice.getSerialNo())) {
+                throw new Exception("Device validation failed");
+            }
+        }
+        catch (Exception e) {
+            log.error("Error while registering client: {}", e.getMessage());
+            throw new CustomException("Failed to add device");
+        }
+
         Device creatDevice = deviceRepository.save(newDevice);
 
         return mapToDeviceDTO(creatDevice);
