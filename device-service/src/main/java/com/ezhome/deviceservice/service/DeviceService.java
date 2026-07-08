@@ -1,0 +1,99 @@
+package com.ezhome.deviceservice.service;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+import org.springframework.stereotype.Service;
+
+import com.ezhome.deviceservice.dto.CreateDeviceRequestDTO;
+import com.ezhome.deviceservice.dto.DeviceDTO;
+import com.ezhome.deviceservice.dto.EditDeviceRequestDTO;
+import com.ezhome.deviceservice.entity.Device;
+import com.ezhome.deviceservice.exception.CustomException;
+import com.ezhome.deviceservice.repository.DeviceRepository;
+
+
+@Service
+public class DeviceService {
+
+    private final DeviceRepository deviceRepository;
+
+    public DeviceService(DeviceRepository deviceRepository) {
+        this.deviceRepository = deviceRepository;
+    }
+
+    public DeviceDTO createUserDevice(UUID userId, CreateDeviceRequestDTO req) {
+
+        Optional<Device> device = deviceRepository.findBySerialNo(req.getSerialNo());
+        if(device.isPresent()) {
+            throw new CustomException("Device already linked to an user");
+        }    
+        
+        Device newDevice = Device.builder()
+                            .serialNo(req.getSerialNo())
+                            .userId(userId)
+                            .modelName(req.getModelName())
+                            .build();
+        
+        Device creatDevice = deviceRepository.save(newDevice);
+
+        return mapToDeviceDTO(creatDevice);
+
+    }
+
+    public DeviceDTO findUserDevice(UUID userId, String serialNo) {
+
+        Device device = deviceRepository.findByUserIdAndSerialNo(userId, serialNo)
+        .orElseThrow(() -> new CustomException("Device not found"));
+
+        return mapToDeviceDTO(device);
+
+    }
+
+    public List<DeviceDTO> fetchAllUserDevices(UUID userId) {
+
+        List<DeviceDTO> allDevices = deviceRepository.findByUserId(userId)
+                                        .stream()
+                                        .map(this::mapToDeviceDTO)
+                                        .toList();
+
+        return allDevices;
+    }
+
+    public void deleteUserDevice(UUID userId, String serialNo) {
+
+        Device device = deviceRepository.findByUserIdAndSerialNo(userId, serialNo)
+            .orElseThrow(() -> new CustomException("No device found!"));
+
+        deviceRepository.delete(device);
+
+    }
+
+    public DeviceDTO editUserDevice(UUID userId, EditDeviceRequestDTO req) {
+
+        Device device = deviceRepository.findByUserIdAndSerialNo(userId, req.getSerialNo())
+        .orElseThrow(() -> new CustomException("Device not found"));
+
+        device.setCustomName(req.getCustomName());
+        Device updatedDevice = deviceRepository.save(device);
+
+        return mapToDeviceDTO(updatedDevice);
+
+    }
+
+    private DeviceDTO mapToDeviceDTO(Device data) {
+        return DeviceDTO.builder()
+                .serialNo(data.getSerialNo())
+                .userId(data.getUserId().toString())
+                .modelName(data.getModelName())
+                .customName(data.getCustomName())
+                .alertsEnabled(data.getAlertsEnabled())
+                .createdAt(data.getCreatedAt())
+                .build();
+
+    }
+
+
+    
+}
