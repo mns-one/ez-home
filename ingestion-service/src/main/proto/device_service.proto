@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "device";
+
+service DeviceService {
+    rpc StreamAllDeviceIds(StreamDeviceIdsRequest) returns (stream StreamDeviceIdsResponse);
+}
+
+message StreamDeviceIdsRequest {
+    int32 pageSize = 1;
+}
+
+message StreamDeviceIdsResponse {
+    repeated string serialNos = 1;
+}
