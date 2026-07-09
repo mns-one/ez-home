@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import com.ezhome.deviceservice.dto.CreateDeviceRequestDTO;
@@ -96,6 +98,13 @@ public class DeviceService {
 
         return mapToDeviceDTO(updatedDevice);
 
+    }
+
+    public Page<String> fetchDeviceIdPage(int pageNumber, int pageSize) {
+
+        PageRequest pageable = PageRequest.of(pageNumber, pageSize);
+        return deviceRepository.findAllSerialNos(pageable);
+        
     }
 
     private DeviceDTO mapToDeviceDTO(Device data) {
