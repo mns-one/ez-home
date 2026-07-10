@@ -23,6 +23,7 @@ public class DeviceServiceGrpcService extends DeviceServiceImplBase {
         this.deviceService = deviceService;
     }
 
+    // fetch and stream all device ids from db to ingestion-service in batches
     public void streamAllDeviceIds(StreamDeviceIdsRequest request, StreamObserver<StreamDeviceIdsResponse> responseObserver) {
 
         int pageSize = request.getPageSize() > 0 ? request.getPageSize() : 100;

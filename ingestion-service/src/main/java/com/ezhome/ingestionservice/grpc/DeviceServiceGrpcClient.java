@@ -40,6 +40,7 @@ public class DeviceServiceGrpcClient {
 
     }
 
+    // request all registered device ids from device-service to fill redis for validation
     public void streamAllDeviceIds(int pageSize) {
 
         StreamDeviceIdsRequest request = StreamDeviceIdsRequest.newBuilder()

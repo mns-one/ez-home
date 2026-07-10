@@ -19,6 +19,7 @@ public class DeviceRegistryGrpcService extends DeviceRegistryServiceImplBase {
         this.deviceService = deviceService;
     }
 
+    // process device validation request from device-service
     public void validateDevice(ValidateDeviceRequest request, StreamObserver<ValidateDeviceResponse> responseObserver) {
 
         log.info("Recieved gRPC ValidateDeviceRequest {}", request.toString());

@@ -1,6 +1,5 @@
-DROP TABLE IF EXISTS registry;
-
-CREATE TABLE registry (
+-- Ensure table exists in db
+CREATE TABLE IF NOT EXISTS registry (
   id                    UUID            PRIMARY KEY,
   serial_no             VARCHAR(255)    NOT NULL UNIQUE,
   batch_no              VARCHAR(255)    NOT NULL,
@@ -9,6 +8,7 @@ CREATE TABLE registry (
   created_at            TIMESTAMPTZ     NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Insert dummy device records for testing
 INSERT INTO "registry" (id, serial_no, batch_no, model_name, factory_location)
 SELECT '223e4567-e89b-12d3-a456-426614174006', 'SMT5001', 'BMC101', '4gang', 'Mumbai'
 WHERE NOT EXISTS (

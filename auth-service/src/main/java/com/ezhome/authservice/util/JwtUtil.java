@@ -17,7 +17,7 @@ public class JwtUtil {
 
   private final Key secretKey;
 
-  // constructor to initialize the secret key
+  // initialize the secret key
   public JwtUtil(@Value("${jwt.secret}") String secret) {
     
     byte[] keyBytes = Base64.getDecoder()

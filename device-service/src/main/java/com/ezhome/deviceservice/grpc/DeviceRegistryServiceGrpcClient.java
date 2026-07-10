@@ -32,6 +32,7 @@ public class DeviceRegistryServiceGrpcClient {
 
     }
 
+    // send device id to device-registry for validation
     public boolean validateDevice(String serialNo) {
 
         ValidateDeviceRequest request = ValidateDeviceRequest.newBuilder()
