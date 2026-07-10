@@ -14,6 +14,7 @@ import com.ezhome.deviceservice.dto.EditDeviceRequestDTO;
 import com.ezhome.deviceservice.entity.Device;
 import com.ezhome.deviceservice.exception.CustomException;
 import com.ezhome.deviceservice.grpc.DeviceRegistryServiceGrpcClient;
+import com.ezhome.deviceservice.grpc.IngestionServiceGrpcClient;
 import com.ezhome.deviceservice.repository.DeviceRepository;
 
 import lombok.extern.slf4j.Slf4j;
@@ -25,10 +26,12 @@ public class DeviceService {
 
     private final DeviceRepository deviceRepository;
     private final DeviceRegistryServiceGrpcClient deviceRegistryServiceGrpcClient;
+    private final IngestionServiceGrpcClient ingestionServiceGrpcClient;
 
-    public DeviceService(DeviceRepository deviceRepository, DeviceRegistryServiceGrpcClient deviceRegistryServiceGrpcClient) {
+    public DeviceService(DeviceRepository deviceRepository, DeviceRegistryServiceGrpcClient deviceRegistryServiceGrpcClient, IngestionServiceGrpcClient ingestionServiceGrpcClient) {
         this.deviceRepository = deviceRepository;
         this.deviceRegistryServiceGrpcClient = deviceRegistryServiceGrpcClient;
+        this.ingestionServiceGrpcClient = ingestionServiceGrpcClient;
     }
 
     // create a new entry for user device
@@ -46,13 +49,15 @@ public class DeviceService {
                             .build();
 
         // validate device with device-registry before inserting
+        // and send deviceId to ingestion-service
         try{
             if(!deviceRegistryServiceGrpcClient.validateDevice(newDevice.getSerialNo())) {
                 throw new Exception("Device validation failed");
             }
+            ingestionServiceGrpcClient.addDeviceToIngestionService(newDevice.getSerialNo());
         }
         catch (Exception e) {
-            log.error("Error while registering client: {}", e.getMessage());
+            log.error("Error while registering device: {}", e.getMessage());
             throw new CustomException("Failed to add device");
         }
 
@@ -89,7 +94,14 @@ public class DeviceService {
         Device device = deviceRepository.findByUserIdAndSerialNo(userId, serialNo)
             .orElseThrow(() -> new CustomException("No device found!"));
 
-        deviceRepository.delete(device);
+        try{
+            ingestionServiceGrpcClient.deleteDeviceFromIngestionService(device.getSerialNo());
+            deviceRepository.delete(device);
+        }
+        catch (Exception e) {
+            log.error("Error while deleting device: {}", e.getMessage());
+            throw new CustomException("Failed to delete device");
+        }
 
     }
 

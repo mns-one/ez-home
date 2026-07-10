@@ -40,7 +40,7 @@ public class DeviceRegistryServiceGrpcClient {
                             .build();
         
         ValidateDeviceResponse response = blockingStub.validateDevice(request);
-        log.info("Received gRPC ValidateDeviceResponse {}", response);
+        log.info("Received gRPC ValidateDeviceResponse {}", response.toString());
 
         return response.getIsValid();
 
