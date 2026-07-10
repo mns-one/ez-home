@@ -19,6 +19,7 @@ public class DeviceService {
         this.deviceRepository = deviceRepository;
     }
 
+    // create device entry in database
     public DeviceDTO addToRegistry(AddDeviceRequestDTO req) {
 
         Optional<Device> device = deviceRepository.findBySerialNo(req.getSerialNo());
@@ -40,6 +41,7 @@ public class DeviceService {
 
     }
 
+    // fetch device record from database
     public DeviceDTO findinRegistry(String serialNo) {
 
         Device device = deviceRepository.findBySerialNo(serialNo)
@@ -49,6 +51,7 @@ public class DeviceService {
 
     }
 
+    // check if a device exists in database
     public boolean validateDevice(String serialNo) {
 
         Optional<Device> device = deviceRepository.findBySerialNo(serialNo);
@@ -59,6 +62,7 @@ public class DeviceService {
 
     }
 
+    // delete device record from database
     public void deleteFromRegistry(String serialNo) {
 
         Device device = deviceRepository.findBySerialNo(serialNo)
@@ -68,7 +72,7 @@ public class DeviceService {
 
     }
 
-
+    // helper function for mapping
     public DeviceDTO mapToDeviceDTO(Device device) {
         return DeviceDTO.builder()
                 .serialNo(device.getSerialNo())

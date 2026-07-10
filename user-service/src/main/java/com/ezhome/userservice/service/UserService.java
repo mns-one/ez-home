@@ -50,7 +50,7 @@ public class UserService {
 
     }
 
-    // edit user account by userId
+    // edit user account in db
     public UserAccountDTO editUser(UUID id, EditUserDTO payload) {
 
         User user = userRepository.findById(id)
@@ -68,7 +68,7 @@ public class UserService {
 
     }
 
-    // delete user account by userId
+    // delete user account from db
     public void deleteUser(UUID id) {
 
         User user = userRepository.findById(id)

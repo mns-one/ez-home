@@ -24,7 +24,8 @@ public class JwtValidationGatewayFilterFactory extends AbstractGatewayFilterFact
   public GatewayFilter apply(Object config) {
 
     return (exchange, chain) -> {
-
+      // verify token and attach claims to request header for downstream services
+      
       String authHeader = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
 
       if(authHeader == null || !authHeader.startsWith("Bearer ")) {

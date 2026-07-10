@@ -19,6 +19,7 @@ public class IngestionService {
         this.deviceIdCache = deviceIdCache;
     }
 
+    // validate device id and create kafka event
     public void processTelemetry(TelemetryDTO req) {
 
         log.info("Telemetry Recived -> " + req);

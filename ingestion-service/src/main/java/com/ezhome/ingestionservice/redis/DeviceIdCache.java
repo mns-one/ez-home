@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class DeviceIdCache {
 
+    // maintain a set of all registered device ids for quick validation
     private final RedisTemplate<String, String> redisTemplate;
 
     public DeviceIdCache(RedisTemplate<String, String> redisTemplate) {

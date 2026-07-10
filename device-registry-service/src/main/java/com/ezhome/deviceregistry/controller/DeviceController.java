@@ -55,8 +55,9 @@ public class DeviceController {
     }
 
     private void verifyAccess(String userId, String role) {
-        UUID.fromString(userId);
 
+        // return any request without ADMIN role
+        UUID.fromString(userId);
         if(!role.equalsIgnoreCase("ADMIN")){
             throw new AccessException("Account does not have permission");
         }

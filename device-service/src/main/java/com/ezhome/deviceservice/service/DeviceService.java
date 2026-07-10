@@ -31,6 +31,7 @@ public class DeviceService {
         this.deviceRegistryServiceGrpcClient = deviceRegistryServiceGrpcClient;
     }
 
+    // create a new entry for user device
     public DeviceDTO createUserDevice(UUID userId, CreateDeviceRequestDTO req) {
 
         Optional<Device> device = deviceRepository.findBySerialNo(req.getSerialNo());
@@ -43,7 +44,8 @@ public class DeviceService {
                             .userId(userId)
                             .modelName(req.getModelName())
                             .build();
-        
+
+        // validate device with device-registry before inserting
         try{
             if(!deviceRegistryServiceGrpcClient.validateDevice(newDevice.getSerialNo())) {
                 throw new Exception("Device validation failed");
@@ -60,6 +62,7 @@ public class DeviceService {
 
     }
 
+    // fetch record for a device registered by user
     public DeviceDTO findUserDevice(UUID userId, String serialNo) {
 
         Device device = deviceRepository.findByUserIdAndSerialNo(userId, serialNo)
@@ -69,6 +72,7 @@ public class DeviceService {
 
     }
 
+    // fetch record for all devices registered by user
     public List<DeviceDTO> fetchAllUserDevices(UUID userId) {
 
         List<DeviceDTO> allDevices = deviceRepository.findByUserId(userId)
@@ -79,6 +83,7 @@ public class DeviceService {
         return allDevices;
     }
 
+    // delete record for a user device
     public void deleteUserDevice(UUID userId, String serialNo) {
 
         Device device = deviceRepository.findByUserIdAndSerialNo(userId, serialNo)
@@ -88,6 +93,7 @@ public class DeviceService {
 
     }
 
+    // edit user device record details in db
     public DeviceDTO editUserDevice(UUID userId, EditDeviceRequestDTO req) {
 
         Device device = deviceRepository.findByUserIdAndSerialNo(userId, req.getSerialNo())
@@ -100,6 +106,7 @@ public class DeviceService {
 
     }
 
+    // fetch serialNo of all devices in db using pagination
     public Page<String> fetchDeviceIdPage(int pageNumber, int pageSize) {
 
         PageRequest pageable = PageRequest.of(pageNumber, pageSize);
@@ -107,6 +114,7 @@ public class DeviceService {
         
     }
 
+    // helper function for mapping
     private DeviceDTO mapToDeviceDTO(Device data) {
         return DeviceDTO.builder()
                 .serialNo(data.getSerialNo())
