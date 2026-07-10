@@ -88,6 +88,23 @@ services:
     networks:
       - ezhomenet
 
+  ingestion-redis:
+      image: redis:7-alpine
+      container_name: ${DOCKER_INGESTION_REDIS_CONTAINER_NAME}
+      restart: unless-stopped
+
+      volumes:
+        - ingestion_redis_data:/data
+
+      healthcheck:
+        test: ["CMD", "redis-cli", "ping"]
+        interval: 10s
+        timeout: 5s
+        retries: 1
+
+      networks:
+        - ezhomenet
+
   user-app:
     build:
       context: ./user-service
@@ -177,26 +194,58 @@ services:
     networks:
       - ezhomenet
 
+  ingestion-app:
+    build:
+      context: ./ingestion-service
+      dockerfile: Dockerfile
+    container_name: ${DOCKER_INGESTION_SERVICE_CONTAINER_NAME}
+    restart: on-failure:1  
+
+    depends_on:
+      ingestion-redis:
+        condition: service_healthy
+
+    environment:
+      INGESTION_SERVICE_PORT: ${DOCKER_INGESTION_SERVICE_PORT}
+      INGESTION_SERVICE_GRPC_SERVER_PORT: ${DOCKER_INGESTION_SERVICE_GRPC_PORT}
+      INGESTION_SERVICE_REDIS_HOST: ${DOCKER_INGESTION_REDIS_CONTAINER_NAME}
+      INGESTION_SERVICE_REDIS_PORT: ${DOCKER_INGESTION_SERVICE_REDIS_PORT}
+      DEVICE_SERVICE_ADDRESS: ${DOCKER_DEVICE_SERVICE_CONTAINER_NAME}
+      DEVICE_SERVICE_GRPC_SERVER_PORT: ${DOCKER_DEVICE_SERVICE_GRPC_PORT}
+
+    networks:
+      - ezhomenet
+
   app:
     build:
       context: ./api-gateway
       dockerfile: Dockerfile
     container_name: api-gateway
     restart: on-failure:1
+
     environment:
       API_GATEWAY_SERVICE_PORT: ${DOCKER_API_GATEWAY_PORT}
       API_GATEWAY_AUTH_URL: ${DOCKER_API_GATEWAY_AUTH_URL}
       JWT.SECRET: ${JWT_SECRET}
+
       AUTH_SERVICE_CONTAINER_NAME: ${DOCKER_AUTH_SERVICE_CONTAINER_NAME}
       AUTH_SERVICE_PORT: ${DOCKER_AUTH_SERVICE_PORT}
+
       USER_SERVICE_CONTAINER_NAME: ${DOCKER_USER_SERVICE_CONTAINER_NAME}
       USER_SERVICE_PORT: ${DOCKER_USER_SERVICE_PORT}
+
       DEVICE_REGISTRY_SERVICE_CONTAINER_NAME: ${DOCKER_DEVICE_REGISTRY_SERVICE_CONTAINER_NAME}
       DEVICE_REGISTRY_SERVICE_PORT: ${DOCKER_DEVICE_REGISTRY_SERVICE_PORT}
+
       DEVICE_SERVICE_CONTAINER_NAME: ${DOCKER_DEVICE_SERVICE_CONTAINER_NAME}
       DEVICE_SERVICE_PORT: ${DOCKER_DEVICE_SERVICE_PORT}
+
+      INGESTION_SERVICE_CONTAINER_NAME: ${DOCKER_INGESTION_SERVICE_CONTAINER_NAME}
+      INGESTION_SERVICE_PORT: ${DOCKER_INGESTION_SERVICE_PORT}
+
     ports:
       - "4000:4000"
+      
     networks:
       - ezhomenet
 
@@ -208,4 +257,5 @@ volumes:
   auth_data:
   device_registry_data:
   device_data:
+  ingestion_redis_data:
 
