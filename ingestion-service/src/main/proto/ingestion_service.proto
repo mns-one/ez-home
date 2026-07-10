@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "ingestion";
+
+service IngestionService {
+    rpc AddDeviceToIngestionService(AddDeviceRequest) returns (AddDeviceResponse);
+    rpc DeleteDeviceFromIngestionService(DeleteDeviceRequest) returns (DeleteDeviceResponse);
+}
+
+message AddDeviceRequest {
+    string serialNo = 1;
+}
+
+message AddDeviceResponse {
+}
+
+message DeleteDeviceRequest {
+    string serialNo = 1;
+}
+
+message DeleteDeviceResponse {
+}
+

@@ -22,14 +22,14 @@ public class RedisStartupLoader implements ApplicationRunner {
     @Override
     public void run(ApplicationArguments args) {
 
-        log.info("Establishing connection load memory....");
+        log.info("Establishing connection to load memory....");
 
         try{
             deviceServiceGrpcClient.streamAllDeviceIds(1);
         }
         catch (Exception e) {
             log.error("Error loading memory -> " + e.getMessage());
-            throw new RuntimeException();
+            throw new RuntimeException("Error during gRPC startup connection to device-service");
         }
 
         log.info("Memory loading completed!");
