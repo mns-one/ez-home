@@ -88,6 +88,28 @@ services:
     networks:
       - ezhomenet
 
+  usage-db:
+    image: postgres:17
+    container_name: ${DOCKER_POSTGRES_USAGE_DB_CONTAINER_NAME}
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_DB: ${DOCKER_POSTGRES_USAGE_DB_NAME}
+      POSTGRES_USER: ${DOCKER_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${DOCKER_POSTGRES_PASSWORD}
+
+    volumes:
+      - usage_data:/var/lib/postgresql/data
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-admin} -d ${POSTGRES_DB:-usagedb}"]
+      interval: 10s
+      timeout: 5s
+      retries: 1
+
+    networks:
+      - ezhomenet
+
   ingestion-redis:
       image: redis:7-alpine
       container_name: ${DOCKER_INGESTION_REDIS_CONTAINER_NAME}
@@ -104,6 +126,45 @@ services:
 
       networks:
         - ezhomenet
+
+  kafka:
+    image: apache/kafka:latest
+    container_name: ${DOCKER_KAFKA_CONTAINER_NAME}
+    restart: unless-stopped
+
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_LISTENER_NAMES: INTERNAL
+      KAFKA_LISTENERS: PLAINTEXT://:9092,INTERNAL://:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://${DOCKER_KAFKA_CONTAINER_NAME}:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list > /dev/null 2>&1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+    networks:
+      - ezhomenet
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: ${DOCKER_KAFKA_UI_CONTAINER_NAME}
+
+    ports:
+      - "8085:8080"
+
+    environment:
+      KAFKA_CLUSTERS_0_NAME: ${DOCKER_KAFKA_UI_CLUSTER_NAME}
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: ${DOCKER_KAFKA_SERVER}
+
+    networks:
+      - ezhomenet
 
   user-app:
     build:
@@ -207,16 +268,48 @@ services:
     restart: on-failure:1  
 
     depends_on:
+      device-app:
+        condition: service_started
       ingestion-redis:
         condition: service_healthy
+      kafka:
+        condition: service_healthy  
 
     environment:
       INGESTION_SERVICE_PORT: ${DOCKER_INGESTION_SERVICE_PORT}
       INGESTION_SERVICE_GRPC_SERVER_PORT: ${DOCKER_INGESTION_SERVICE_GRPC_PORT}
+
       INGESTION_SERVICE_REDIS_HOST: ${DOCKER_INGESTION_REDIS_CONTAINER_NAME}
       INGESTION_SERVICE_REDIS_PORT: ${DOCKER_INGESTION_SERVICE_REDIS_PORT}
+
+      KAFKA_BOOTSTRAP_SERVERS: ${DOCKER_KAFKA_SERVER}
+
       DEVICE_SERVICE_ADDRESS: ${DOCKER_DEVICE_SERVICE_CONTAINER_NAME}
       DEVICE_SERVICE_GRPC_SERVER_PORT: ${DOCKER_DEVICE_SERVICE_GRPC_PORT}
+
+    networks:
+      - ezhomenet
+
+  usage-app:
+    build:
+      context: ./usage-service
+      dockerfile: Dockerfile
+    container_name: ${DOCKER_USAGE_SERVICE_CONTAINER_NAME}
+    restart: on-failure:1  
+
+    depends_on:
+      usage-db:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+
+    environment:
+      USAGE_SERVICE_PORT: ${DOCKER_USAGE_SERVICE_PORT}
+      KAFKA_BOOTSTRAP_SERVERS: ${DOCKER_KAFKA_SERVER}
+
+      USAGE_SERVICE_DB_URL: ${DOCKER_POSTGRES_USAGE_DB_URL}
+      USAGE_SERVICE_DB_USERNAME: ${DOCKER_POSTGRES_USER}
+      USAGE_SERVICE_DB_PASSWORD: ${DOCKER_POSTGRES_PASSWORD}
 
     networks:
       - ezhomenet
@@ -263,4 +356,5 @@ volumes:
   device_registry_data:
   device_data:
   ingestion_redis_data:
+  usage_data:
 
