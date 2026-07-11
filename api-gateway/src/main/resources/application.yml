@@ -37,11 +37,19 @@ spring:
               filters:
                 - JwtValidation   
 
-            # Route for /ingestiony/** to ingestion-service
+            # Route for /ingestion/** to ingestion-service
             - id: ingestion-service-route
               uri: http://${INGESTION_SERVICE_CONTAINER_NAME}:${INGESTION_SERVICE_PORT}
               predicates:
                 - Path=/ingestion/**
+
+            # Route for /alert/** to alert-service
+            - id: alert-service-route
+              uri: http://${ALERT_SERVICE_CONTAINER_NAME}:${ALERT_SERVICE_PORT}
+              predicates:
+                - Path=/alert/**
+              filters:
+                - JwtValidation
     
 
 
