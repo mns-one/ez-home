@@ -110,6 +110,28 @@ services:
     networks:
       - ezhomenet
 
+  alert-db:
+    image: postgres:17
+    container_name: ${DOCKER_POSTGRES_ALERT_DB_CONTAINER_NAME}
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_DB: ${DOCKER_POSTGRES_ALERT_DB_NAME}
+      POSTGRES_USER: ${DOCKER_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${DOCKER_POSTGRES_PASSWORD}
+
+    volumes:
+      - alert_data:/var/lib/postgresql/data
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-admin} -d ${POSTGRES_DB:-alertdb}"]
+      interval: 10s
+      timeout: 5s
+      retries: 1
+
+    networks:
+      - ezhomenet
+
   ingestion-redis:
       image: redis:7-alpine
       container_name: ${DOCKER_INGESTION_REDIS_CONTAINER_NAME}
@@ -314,6 +336,27 @@ services:
     networks:
       - ezhomenet
 
+  alert-app:
+    build:
+      context: ./alert-service
+      dockerfile: Dockerfile
+    container_name: ${DOCKER_ALERT_SERVICE_CONTAINER_NAME}
+    restart: on-failure:1
+
+    depends_on:
+      alert-db:
+        condition: service_healthy
+
+    environment:
+      ALERT_SERVICE_PORT: ${DOCKER_ALERT_SERVICE_PORT}
+
+      ALERT_SERVICE_DB_URL: ${DOCKER_POSTGRES_ALERT_DB_URL}
+      ALERT_SERVICE_DB_USERNAME: ${DOCKER_POSTGRES_USER}
+      ALERT_SERVICE_DB_PASSWORD: ${DOCKER_POSTGRES_PASSWORD}
+
+    networks:
+      - ezhomenet
+
   app:
     build:
       context: ./api-gateway
@@ -341,6 +384,9 @@ services:
       INGESTION_SERVICE_CONTAINER_NAME: ${DOCKER_INGESTION_SERVICE_CONTAINER_NAME}
       INGESTION_SERVICE_PORT: ${DOCKER_INGESTION_SERVICE_PORT}
 
+      ALERT_SERVICE_CONTAINER_NAME: ${DOCKER_ALERT_SERVICE_CONTAINER_NAME}
+      ALERT_SERVICE_PORT: ${DOCKER_ALERT_SERVICE_PORT}
+
     ports:
       - "4000:4000"
       
@@ -357,4 +403,5 @@ volumes:
   device_data:
   ingestion_redis_data:
   usage_data:
+  alert_data:
 
