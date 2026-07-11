@@ -33,11 +33,9 @@ public class UsageService {
 
         log.info("Recieved Event -> {}", event);
 
-        // ADD COMMENTS
-
         try{
 
-            // insert in usage
+            // persist raw telemetry
             Usage usage = Usage.builder()
                     .deviceId(event.getDeviceId())
                     .metric(event.getEnergyUsage())
@@ -46,7 +44,7 @@ public class UsageService {
             
             Usage createdUsage = usageRepository.save(usage);
 
-            // insert in daily_usage
+            // upsert the device usage
             LocalDate date = event.getCreatedAt().toLocalDate();
 
             dailyUsageRepository.upsertDailyUsage(
@@ -55,12 +53,11 @@ public class UsageService {
                 event.getEnergyUsage(),
                 1
             );
+            // later CRON jobs can easily fetch entries from daily_usage to aggregate Weekly, Monthly and Yearly tables
 
             DailyUsage dailyUsage = dailyUsageRepository.findByDeviceIdAndDate(event.getDeviceId(), date);
 
-            log.info("DailyUsage of Device {}", dailyUsage);
-
-            //produce kafka event
+            //produce kafka usage-event for current usage status of device
             UsageEvent usageEvent = UsageEvent.builder()
                             .deviceId(createdUsage.getDeviceId())
                             .usage(createdUsage.getMetric())

@@ -10,12 +10,11 @@ import org.springframework.data.repository.query.Param;
 import com.ezhome.usageservice.entity.DailyUsage;
 
 import jakarta.transaction.Transactional;
-import java.util.List;
-
 
 
 public interface DailyUsageRepository extends JpaRepository<DailyUsage, String> {
 
+    // Upsert query to quickly calculate device usage for each day by only updating one row
     @Modifying
     @Transactional
     @Query(value = """
