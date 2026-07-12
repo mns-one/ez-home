@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "alert";
+
+service AlertService {
+    rpc DeleteAlertService(DeleteAlertServiceRequest) returns (DeleteAlertServiceResponse);
+}
+
+message DeleteAlertServiceRequest {
+    string device_id = 1;
+}
+
+message DeleteAlertServiceResponse {
+}
