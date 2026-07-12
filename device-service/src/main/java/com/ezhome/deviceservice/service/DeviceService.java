@@ -126,6 +126,23 @@ public class DeviceService {
         
     }
 
+    public Boolean validateUserDevice(String deviceId, String userId) {
+
+        try{
+            UUID id = UUID.fromString(userId);
+            Optional<Device> device = deviceRepository.findByUserIdAndSerialNo(id, deviceId);
+            if(!device.isPresent()){
+                throw new Exception("No record found in database");
+            }
+        }
+        catch (Exception e) {
+            log.error("User and Device cannot be verifided", e);
+            return false;
+        }
+
+        return true;
+    }
+
     // helper function for mapping
     private DeviceDTO mapToDeviceDTO(Device data) {
         return DeviceDTO.builder()

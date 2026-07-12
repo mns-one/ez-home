@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "validate";
+
+service ValidateUserDeviceService {
+    rpc ValidateUserDevice(ValidateUserDeviceRequest) returns (ValidateUserDeviceResponse);
+}
+
+message ValidateUserDeviceRequest {
+    string device_id = 1;
+    string user_id = 2;
+}
+
+message ValidateUserDeviceResponse {
+    bool is_valid = 1;
+}
