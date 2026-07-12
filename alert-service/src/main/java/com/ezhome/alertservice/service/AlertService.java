@@ -13,6 +13,7 @@ import com.ezhome.alertservice.dto.EditAlertRequestDTO;
 import com.ezhome.alertservice.dto.FindDeviceAlertsRequestDTO;
 import com.ezhome.alertservice.entity.Alert;
 import com.ezhome.alertservice.exception.CustomException;
+import com.ezhome.alertservice.grpc.DeviceServiceGrpcClient;
 import com.ezhome.alertservice.repository.AlertRepository;
 
 import lombok.extern.slf4j.Slf4j;
@@ -23,9 +24,11 @@ import lombok.extern.slf4j.Slf4j;
 public class AlertService {
 
     private final AlertRepository alertRepository;
+    private final DeviceServiceGrpcClient deviceServiceGrpcClient;
 
-    public AlertService(AlertRepository alertRepository) {
+    public AlertService(AlertRepository alertRepository, DeviceServiceGrpcClient deviceServiceGrpcClient) {
         this.alertRepository = alertRepository;
+        this.deviceServiceGrpcClient = deviceServiceGrpcClient;
     }
 
     public AlertDTO createAlert(UUID userId, CreateAlertRequestDTO req) {
@@ -37,6 +40,16 @@ public class AlertService {
                     .usageTarget(req.getUsageTarget())
                     .alertWindow(req.getAlertWindow())
                     .build();
+        
+        try{
+            if(!deviceServiceGrpcClient.validateUserDevice(alert.getDeviceId(), alert.getUserId().toString())) {
+                throw new Exception("Device validation failed");
+            }
+        }
+        catch (Exception e) {
+            log.error("Error creating alert: {}", e.getMessage());
+            throw new CustomException("Failed to create alert");
+        }
         
         Alert createdAlert = alertRepository.save(alert);
 
