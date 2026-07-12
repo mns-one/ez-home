@@ -16,5 +16,7 @@ public interface AlertRepository extends JpaRepository<Alert, UUID> {
     Optional<Alert> findByIdAndUserId(UUID id, UUID userId);
 
     List<Alert> findByUserId(UUID userId);
+
+    List<Alert> findByDeviceId(String deviceId);
     
 }

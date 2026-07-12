@@ -13,6 +13,7 @@ import com.ezhome.deviceservice.dto.DeviceDTO;
 import com.ezhome.deviceservice.dto.EditDeviceRequestDTO;
 import com.ezhome.deviceservice.entity.Device;
 import com.ezhome.deviceservice.exception.CustomException;
+import com.ezhome.deviceservice.grpc.AlertServiceGrpcClient;
 import com.ezhome.deviceservice.grpc.DeviceRegistryServiceGrpcClient;
 import com.ezhome.deviceservice.grpc.IngestionServiceGrpcClient;
 import com.ezhome.deviceservice.repository.DeviceRepository;
@@ -27,11 +28,18 @@ public class DeviceService {
     private final DeviceRepository deviceRepository;
     private final DeviceRegistryServiceGrpcClient deviceRegistryServiceGrpcClient;
     private final IngestionServiceGrpcClient ingestionServiceGrpcClient;
+    private final AlertServiceGrpcClient alertServiceGrpcClient;
 
-    public DeviceService(DeviceRepository deviceRepository, DeviceRegistryServiceGrpcClient deviceRegistryServiceGrpcClient, IngestionServiceGrpcClient ingestionServiceGrpcClient) {
+    public DeviceService(
+        DeviceRepository deviceRepository,
+        DeviceRegistryServiceGrpcClient deviceRegistryServiceGrpcClient,
+        IngestionServiceGrpcClient ingestionServiceGrpcClient,
+        AlertServiceGrpcClient alertServiceGrpcClient
+    ) {
         this.deviceRepository = deviceRepository;
         this.deviceRegistryServiceGrpcClient = deviceRegistryServiceGrpcClient;
         this.ingestionServiceGrpcClient = ingestionServiceGrpcClient;
+        this.alertServiceGrpcClient = alertServiceGrpcClient;
     }
 
     // create a new entry for user device
@@ -94,8 +102,10 @@ public class DeviceService {
         Device device = deviceRepository.findByUserIdAndSerialNo(userId, serialNo)
             .orElseThrow(() -> new CustomException("No device found!"));
 
+        // remove device from ingestion-service and alert-service too
         try{
             ingestionServiceGrpcClient.deleteDeviceFromIngestionService(device.getSerialNo());
+            alertServiceGrpcClient.deleteAlertService(device.getSerialNo());
             deviceRepository.delete(device);
         }
         catch (Exception e) {
@@ -126,6 +136,7 @@ public class DeviceService {
         
     }
 
+    // validate user-device registration and ownership
     public Boolean validateUserDevice(String deviceId, String userId) {
 
         try{

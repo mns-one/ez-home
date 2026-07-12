@@ -116,6 +116,17 @@ public class AlertService {
 
     }
 
+    // delete all existing alert record for a device
+    public void deleteAllDeviceAlerts(String deviceId) {
+
+        List<Alert> alerts = alertRepository.findByDeviceId(deviceId);
+
+        if (!alerts.isEmpty()) {
+            alertRepository.deleteAll(alerts);
+        }
+
+    }
+
 
     private AlertDTO mapToAlertDTO(Alert data) {
         return AlertDTO.builder()
