@@ -366,6 +366,8 @@ services:
     depends_on:
       alert-db:
         condition: service_healthy
+      kafka:
+        condition: service_healthy    
 
     environment:
       ALERT_SERVICE_PORT: ${DOCKER_ALERT_SERVICE_PORT}
@@ -377,6 +379,8 @@ services:
 
       ALERT_SERVICE_REDIS_HOST: ${DOCKER_ALERT_REDIS_CONTAINER_NAME}
       ALERT_SERVICE_REDIS_PORT: ${DOCKER_ALERT_SERVICE_REDIS_PORT}
+
+      KAFKA_BOOTSTRAP_SERVERS: ${DOCKER_KAFKA_SERVER}
 
       DEVICE_SERVICE_ADDRESS: ${DOCKER_DEVICE_SERVICE_CONTAINER_NAME}
       DEVICE_SERVICE_GRPC_SERVER_PORT: ${DOCKER_DEVICE_SERVICE_GRPC_PORT}

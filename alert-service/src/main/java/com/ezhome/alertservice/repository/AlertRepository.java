@@ -20,5 +20,7 @@ public interface AlertRepository extends JpaRepository<Alert, UUID> {
     List<Alert> findByDeviceId(String deviceId);
 
     Page<Alert> findByIsActiveTrue(Pageable pageable);
+
+    List<Alert> findByDeviceIdAndIsActiveTrue(String deviceId);
     
 }
