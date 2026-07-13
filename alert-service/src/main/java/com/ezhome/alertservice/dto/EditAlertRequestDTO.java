@@ -20,5 +20,7 @@ public class EditAlertRequestDTO {
 
     @NotNull
     private AlertWindow alertWindow;
+
+    @NotNull Boolean isActive;
     
 }

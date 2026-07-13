@@ -149,6 +149,23 @@ services:
       networks:
         - ezhomenet
 
+  alert-redis:
+      image: redis:7-alpine
+      container_name: ${DOCKER_ALERT_REDIS_CONTAINER_NAME}
+      restart: unless-stopped
+
+      volumes:
+        - alert_redis_data:/data
+
+      healthcheck:
+        test: ["CMD", "redis-cli", "ping"]
+        interval: 10s
+        timeout: 5s
+        retries: 1
+
+      networks:
+        - ezhomenet
+
   kafka:
     image: apache/kafka:latest
     container_name: ${DOCKER_KAFKA_CONTAINER_NAME}
@@ -358,6 +375,9 @@ services:
       ALERT_SERVICE_DB_USERNAME: ${DOCKER_POSTGRES_USER}
       ALERT_SERVICE_DB_PASSWORD: ${DOCKER_POSTGRES_PASSWORD}
 
+      ALERT_SERVICE_REDIS_HOST: ${DOCKER_ALERT_REDIS_CONTAINER_NAME}
+      ALERT_SERVICE_REDIS_PORT: ${DOCKER_ALERT_SERVICE_REDIS_PORT}
+
       DEVICE_SERVICE_ADDRESS: ${DOCKER_DEVICE_SERVICE_CONTAINER_NAME}
       DEVICE_SERVICE_GRPC_SERVER_PORT: ${DOCKER_DEVICE_SERVICE_GRPC_PORT}
 
@@ -411,4 +431,5 @@ volumes:
   ingestion_redis_data:
   usage_data:
   alert_data:
+  alert_redis_data:
 
