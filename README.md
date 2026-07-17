@@ -2,12 +2,14 @@
 
 Scalable IoT backend built with Java Spring boot that monitors household devices energy consumption by ingesting real-time telemetry, computing usage statistics, and generating user-defined alerts
 
+>This is an ongoing project, README reflects the current state of repo structure, architecture and implemented features
+
 # Architecture Overview
 
 The platform follows a hybrid architecture, combining synchronous REST/gRPC communication with asynchronous event-driven processing through Apache Kafka
 - Uses gRPC for efficient internal service-to-service communication
 - Kafka decouples services and enables scalable asynchronous processing for telemetry
-- Redis caching to eliminate hot-path database and RPC lookups
+- Redis caching to eliminate hot-path database lookups
 - PostgreSQL persistence with usage aggregation and historical analytics
 - Docker Compose setup for easy deployment of complete system
 
