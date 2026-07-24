@@ -1,6 +1,7 @@
 package com.ezhome.usageservice.entity;
 
 import java.time.LocalDate;
+import java.util.UUID;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -35,6 +36,9 @@ import lombok.ToString;
 public class DailyUsage {
 
     @Id
+    @Column(name = "id", nullable = false, updatable = false)
+    private UUID id;
+
     @Column(name = "device_id", nullable = false)
     private String deviceId;
 
